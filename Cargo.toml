@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 probe-rs = { version = "0.13.0" }
-probe-rs-rtt = { version = "0.13.0" }
-probe-rs-target = { version = "0.13.0" }
+
+[patch.crates-io]
+probe-rs = { git = "https://github.com/probe-rs/probe-rs", branch = "master" }
