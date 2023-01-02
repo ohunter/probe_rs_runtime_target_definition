@@ -1,30 +1,33 @@
 use std::{
+    collections::HashMap,
     env::current_dir,
     fs::read_dir,
     path::{Path, PathBuf},
 };
 
-use probe_rs::config::add_target_from_yaml;
+use probe_rs::config::{add_target_from_yaml, families};
 
 fn main() {
+    let subset = vec!["MKL17Z4", "MIMXRT685S", "MIMXRT1166"];
+
+    println!("BEFORE: {:#?}", filter_families(subset.as_slice()));
+
     let mut path = current_dir().unwrap();
     path.push("targets");
 
     let targets = get_targets(&path);
 
     for target in targets {
-        match add_target_from_yaml(target.as_path()) {
-            Ok(()) => println!(
-                "Targets in file {} were added successfully",
-                target.display()
-            ),
-            Err(err) => println!(
+        if let Err(err) = add_target_from_yaml(target.as_path()) {
+            println!(
                 "Failed to add targets in file {}: {}",
                 target.display(),
                 err
-            ),
+            )
         }
     }
+
+    println!("AFTER: {:#?}", filter_families(subset.as_slice()));
 }
 
 fn get_targets(path: &Path) -> Vec<PathBuf> {
@@ -45,4 +48,21 @@ fn get_targets(path: &Path) -> Vec<PathBuf> {
             }
         })
         .collect()
+}
+
+fn filter_families(subset: &[&str]) -> HashMap<String, Vec<String>> {
+    HashMap::from_iter(families().unwrap().into_iter().filter_map(|family| {
+        if subset.contains(&family.name.as_str()) {
+            Some((
+                family.name.clone(),
+                family
+                    .variants
+                    .into_iter()
+                    .map(|chip| chip.name)
+                    .collect::<Vec<_>>(),
+            ))
+        } else {
+            None
+        }
+    }))
 }
